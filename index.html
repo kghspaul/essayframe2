@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萬用作文模板：雙圖對比版</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 動畫效果 */
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-[#F7F7F5] text-[#37352F] h-[100dvh] overflow-hidden">
+    <div id="error-display" style="display:none; padding: 20px; color: red; background: #ffe6e6; border: 1px solid red; margin: 20px;"></div>
+    
+    <div id="root" class="h-full"></div>
+
+    <script>
+        // 全局錯誤攔截
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('error-display').style.display = 'block';
+            document.getElementById('error-display').innerHTML = 
+                '<h3>⚠️ 程式發生錯誤 (Error Occurred)</h3>' +
+                '<p>請確認您是否使用了 <b>Live Server</b> 或 <b>Tiiny.host</b> 開啟此檔案。<br>直接雙擊(file://)通常會導致此錯誤。</p>' +
+                '<p><b>詳細錯誤:</b> ' + message + '</p>';
+        };
+    </script>
+
+    <script type="text/babel">
+        try {
+            const { useState, useEffect, useRef } = React;
+
+            // --- ICONS (SVG) ---
+            const Icons = {
+                Book: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+                FileText: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+                Play: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+                Pause: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+                Square: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
+                Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+                X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+                ToggleLeft: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="8" cy="12" r="3"/></svg>,
+                ToggleRight: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EB5757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="16" cy="12" r="3"/></svg>,
+                Translate: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 8l6 6"/><path d="M4 14h6"/><path d="M2 5h12"/><path d="M7 2v3"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>,
+                ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>,
+                ChevronUp: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+            };
+
+            // --- 資料庫 ---
+            const VOCAB_DB = {
+                "juxtaposition": { kk: "[͵dʒʌkstəpəˋzɪʃən]", pos: "n.", def: "並列；對照", ex: "The juxtaposition of wealth and poverty is striking." },
+                "multifaceted": { kk: "[͵mʌltɪˋfæsɪtɪd]", pos: "adj.", def: "多面向的", ex: "This is a multifaceted problem." },
+                "spectrum": { kk: "[ˋspɛktrəm]", pos: "n.", def: "光譜；範圍", ex: "The two views are at opposite ends of the spectrum." },
+                "captures": { kk: "[ˋkæptʃɚz]", pos: "v.", def: "捕捉；刻畫", ex: "The photo captures the joy of the moment." },
+                "observe": { kk: "[əbˋzɝv]", pos: "v.", def: "觀察", ex: "We can observe changes in the weather." },
+                "characterized": { kk: "[ˋkærəktə͵raɪzd]", pos: "v.", def: "具有...特徵", ex: "The era was characterized by rapid change." },
+                "emphasizing": { kk: "[ˋɛmfə͵saɪzɪŋ]", pos: "v.", def: "強調", ex: "He is emphasizing the importance of safety." },
+                "scenarios": { kk: "[sɪˋnærɪ͵oz]", pos: "n.", def: "情境；場景", ex: "We planned for several possible scenarios." },
+                "contrast": { kk: "[ˋkɑntræst]", pos: "n.", def: "對比；差異", ex: "The contrast between the two colors is sharp." },
+                "reflecting": { kk: "[rɪˋflɛktɪŋ]", pos: "v.", def: "反思；反映", ex: "I spent time reflecting on my decision." },
+                "depictions": { kk: "[dɪˋpɪkʃənz]", pos: "n.", def: "描繪", ex: "The book contains vivid depictions of war." },
+                "gravitating": { kk: "[ˋgrævə͵tetɪŋ]", pos: "v.", def: "被吸引；傾向", ex: "Most people are gravitating towards the city." },
+                "represents": { kk: "[͵rɛprɪˋzɛnts]", pos: "v.", def: "代表", ex: "This flag represents our country." },
+                "sanctuary": { kk: "[ˋsæŋktʃʊ͵ɛrɪ]", pos: "n.", def: "避風港；聖所", ex: "My room is my sanctuary." },
+                "merit": { kk: "[ˋmɛrɪt]", pos: "n.", def: "優點；價值", ex: "There is some merit in your plan." },
+                "pales": { kk: "[pelz]", pos: "v.", def: "相形見絀 (pale in comparison)", ex: "Everything else pales in comparison to this." },
+                "comparison": { kk: "[kəmˋpærəsn]", pos: "n.", def: "比較", ex: "By comparison, the second option is cheaper." },
+                "essential": { kk: "[ɪˋsɛnʃəl]", pos: "adj.", def: "本質的；必要的", ex: "Water is essential for life." },
+                "priority": { kk: "[praɪˋɔrətɪ]", pos: "n.", def: "優先事項", ex: "Safety is our top priority." },
+                "undoubtedly": { kk: "[ʌnˋdaʊtɪdlɪ]", pos: "adv.", def: "無疑地", ex: "He is undoubtedly the best player." },
+                "artificial": { kk: "[͵ɑrtəˋfɪʃəl]", pos: "adj.", def: "人工的", ex: "The flowers are artificial but look real." },
+                "facilities": { kk: "[fəˋsɪlətɪz]", pos: "n.", def: "設施", ex: "The hotel has excellent sports facilities." },
+                "lively": { kk: "[ˋlaɪvlɪ]", pos: "adj.", def: "熱鬧的；充滿活力的", ex: "The market is very lively today." },
+                "starkly": { kk: "[ˋstɑrklɪ]", pos: "adv.", def: "明顯地；嚴酷地", ex: "The reality contrasts starkly with the dream." },
+                "evoking": { kk: "[ɪˋvokɪŋ]", pos: "v.", def: "喚起", ex: "The smell evokes memories of childhood." },
+                "atmosphere": { kk: "[ˋætməs͵fɪr]", pos: "n.", def: "氣氛", ex: "The restaurant has a cozy atmosphere." },
+                "dichotomy": { kk: "[daɪˋkɑtəmɪ]", pos: "n.", def: "二分法；對立", ex: "There is a dichotomy between theory and practice." },
+                "cautious": { kk: "[ˋkɔʃəs]", pos: "adj.", def: "謹慎的", ex: "He is cautious about spending money." },
+                "relieving": { kk: "[rɪˋlivɪŋ]", pos: "v.", def: "緩解", ex: "Medicine is effective in relieving pain." },
+                "shivering": { kk: "[ˋʃɪvərɪŋ]", pos: "v.", def: "發抖", ex: "He was shivering from the cold." },
+                "empathy": { kk: "[ˋɛmpəθɪ]", pos: "n.", def: "同理心", ex: "She felt great empathy for the victims." },
+                "unnecessarily": { kk: "[ʌnˋnɛsə͵sɛrəlɪ]", pos: "adv.", def: "不必要地", ex: "Don't take risks unnecessarily." },
+                "conversely": { kk: "[kənˋvɝslɪ]", pos: "adv.", def: "相反地", ex: "He loves sports; conversely, his brother hates them." },
+                "serene": { kk: "[səˋrin]", pos: "adj.", def: "寧靜的", ex: "The lake looked serene in the moonlight." },
+                "tranquil": { kk: "[ˋtræŋkwɪl]", pos: "adj.", def: "恬靜的", ex: "They live in a tranquil village." },
+                "invigorating": { kk: "[ɪnˋvɪgə͵retɪŋ]", pos: "adj.", def: "生氣勃勃的；令人振奮的", ex: "A morning run is invigorating." },
+                "idyllic": { kk: "[aɪˋdɪlɪk]", pos: "adj.", def: "田園詩般的", ex: "It was an idyllic vacation." },
+                "chaotic": { kk: "[keˋɑtɪk]", pos: "adj.", def: "混亂的", ex: "The traffic in the city is chaotic." },
+                "perilous": { kk: "[ˋpɛrələs]", pos: "adj.", def: "危險的", ex: "The journey was perilous." },
+                "hazardous": { kk: "[ˋhæzɚdəs]", pos: "adj.", def: "有害的；冒險的", ex: "Chemicals can be hazardous to health." },
+                "suffocating": { kk: "[ˋsʌfə͵ketɪŋ]", pos: "adj.", def: "令人窒息的", ex: "The heat was suffocating." },
+                "convinced": { kk: "[kənˋvɪnst]", pos: "adj.", def: "確信的", ex: "I am convinced that we will win." },
+                "resonate": { kk: "[ˋrɛzə͵net]", pos: "v.", def: "共鳴", ex: "Her speech resonated with the audience." },
+                "indispensable": { kk: "[͵ɪndɪsˋpɛnsəb!]", pos: "adj.", def: "不可或缺的", ex: "Mobile phones have become indispensable." },
+                "paramount": { kk: "[ˋpærə͵maʊnt]", pos: "adj.", def: "至關重要的", ex: "Safety is of paramount importance." },
+                "pivotal": { kk: "[ˋpɪvət!]", pos: "adj.", def: "關鍵的", ex: "He played a pivotal role in the negotiations." }
+            };
+
+            const FOOTNOTE_DB = {
+                1: ["artificial amusement", "enjoying a holiday"],
+                2: ["natural serenity", "facing danger"],
+                3: ["ideal park", "a typhoon day"],
+                4: ["relaxation", "excitement"],
+                5: ["a colorful playground full of children", "crowds of people lining up at a movie theater"],
+                6: ["it's a perfect place for kids to play and have fun together", "many people treat the typhoon break simply as a bonus time to have fun"],
+                7: ["tall trees and a simple walking path", "motorcyclists struggling against strong winds and heavy rain"],
+                8: ["the relaxing power of nature", "how dangerous it is to be outside during the storm"],
+                9: ["excitement vs. relaxation", "personal pleasure vs. public safety"],
+                10: ["the peaceful forest shown in Image B", "the cautious attitude suggested by Picture B"],
+                11: ["a park", "a typhoon day"],
+                12: ["a place to exercise", "a free day off from school or work"],
+                13: ["a sanctuary for resting my mind", "a measure to protect our lives"],
+                14: ["playing on the swings", "going shopping or watching a movie"],
+                15: ["mental health provided by nature", "staying safe indoors"],
+                16: ["I felt extremely stressed after a difficult math exam. Instead of going to a noisy place, I took a walk in a quiet park nearby. The fresh air and the sound of birds quickly made me feel calm again.", 
+                     "I ordered food delivery during a typhoon because I was lazy. When the delivery man arrived, he was soaking wet and shivering. I felt terrible because my convenience put him in danger."],
+                17: ["public spaces", "government policy"],
+                18: ["comfort and peace", "safety and empathy"],
+                19: ["people can truly recharge their batteries", "no one gets hurt unnecessarily"]
+            };
+
+            const FORMULA_PARAGRAPHS = [
+                `[P1]
+The set of images presented offers a striking juxtaposition between 圖1內容(名詞)[1] and 圖2內容(名詞)[2], highlighting the multifaceted nature of 兩張圖的共同主題(名詞)[3]. On one end of the spectrum, Image A captures a sense of 描述氛圍或情境的名詞[4]. Here, we observe 更明確的細節(名詞)[5], which suggests (that) 解讀此現象或氛圍的句子[6]. Unlike the former, this scene is characterized by 描述圖B的特色(名詞)[7], emphasizing 圖B傳達的意義(名詞)[8]. The difference between these two scenarios is not merely visual but speaks to the deeper contrast of 表達兩張圖片各自主題的名詞[9].`,
+                
+                `[P2]
+Reflecting upon these distinct depictions, I find myself gravitating towards 某張圖片中的情境或做法[10]. To me, 與主題有關的名詞[11] represents more than just 表面上的意義[12]; it serves as 深層的意義[13]. While 另一張圖的選擇或做法[14] holds some merit, it pales in comparison to the essential value of 你選擇該圖的理由或動機[15]. For instance, I recall a moment when 我某時某地如何做了何事(用多個句子詳細描述一個例子)[16]. Ultimately, whether we are discussing 與主題有關的名詞[17] or personal choices, the priority should undoubtedly be placed on 你選擇該圖的核心價值觀(名詞)[18], ensuring that 最理想的結果[19].`
+            ];
+
+            const ESSAYS_DATA = [
+                {
+                    id: 1,
+                    title: "範文 1: Ideal Park",
+                    prompt: "提示: 不同的公園,可能樣貌不同,特色也不同。請以此為主題,並依據下列兩張圖片的內容(圖A:人工遊樂設施 vs 圖B:自然森林公園),寫一篇英文作文,文分兩段。第一段描述圖A和圖B中的公園各有何特色,第二段則說明你心目中理想公園的樣貌與特色,並解釋你的理由。",
+                    images: [
+                        { 
+                            src: "https://drive.google.com/uc?export=view&id=1rcVmpy5FK4ckvBmkSHvmi0XBwrAcSf4D", 
+                            label: "Image A & B", 
+                            desc: "講義原圖：遊樂場 vs 森林" 
+                        }
+                    ],
+                    content: "The set of images presented offers a striking juxtaposition between artificial facilities and natural environments, highlighting the multifaceted nature of an ideal park. On one end of the spectrum, Image A captures a sense of lively energy. Here, we observe a colorful playground full of children, which suggests a perfect place for kids to play and have fun together. Conversely, Image B paints a starkly different picture, evoking an atmosphere of peace and quiet. Unlike the former, this scene is characterized by tall trees and a simple walking path, emphasizing the relaxing power of nature. The difference between these two scenarios is not merely visual but speaks to the deeper contrast of excitement versus relaxation.\n\nReflecting upon these distinct depictions, I find myself gravitating towards the peaceful forest shown in Image B. To me, a park represents more than just a place to exercise; it serves as a sanctuary for resting my mind. While playing on the swings holds some merit for physical health, it pales in comparison to the essential value of mental health provided by nature. For instance, I recall a moment when I felt extremely stressed after a difficult math exam. Instead of going to a noisy place, I took a walk in a quiet park nearby. The fresh air and the sound of birds quickly made me feel calm again. Ultimately, whether we are discussing public spaces or personal choices, the priority should undoubtedly be placed on comfort and peace, ensuring that people can truly recharge their batteries.",
+                    translation: "這組圖片呈現了人工設施與自然環境之間的強烈對比，突顯了理想公園的多面向本質。在光譜的一端，圖片A捕捉到了一種充滿活力的能量。在這裡，我們觀察到一個充滿孩子色彩繽紛的遊樂場，這暗示著一個讓孩子們一起玩耍和同樂的完美場所。相反地，圖片B描繪了一幅截然不同的畫面，喚起了一種寧靜與平和的氛圍。與前者不同，這個場景的特徵是高聳的樹木和一條簡單的步道，強調了大自然的放鬆力量。這兩種情境之間的差異不僅是視覺上的，更訴說了興奮與放鬆之間更深層的對比。\n\n反思這些截然不同的描繪，我發現自己更傾向於圖片B中展示的寧靜森林。對我來說，公園不僅僅是一個運動的地方；它充當了我心靈休息的避風港。雖然盪鞦韆對身體健康有其優點，但與大自然提供的心理健康這一本質價值相比，它就相形見絀了。例如，我回想起有一次我在經歷了一場困難的數學考試後感到壓力極大。我沒有去吵雜的地方，而是在附近的安靜公園散步。新鮮的空氣和鳥鳴聲很快讓我再次感到平靜。最終，無論我們討論的是公共空間還是個人選擇，優先考量無疑應該放在舒適與平靜上，確保人們能夠真正地充電。"
+                },
+                {
+                    id: 2,
+                    title: "範文 2: Typhoon Day",
+                    prompt: "提示: 每逢颱風逼近臺灣,各縣市政府會依氣象預報的內容而決定隔日是否停止上班上課。請針對這個議題寫一篇英文作文,文分兩段。第一段根據下方對比圖片(圖A:電影院排隊人潮 vs 圖B:風雨中騎車),描述颱風假時,實際上可能出現的兩種不同情景;第二段說明你對放颱風假的看法與經驗。",
+                    images: [
+                        { 
+                            src: "https://drive.google.com/uc?export=view&id=1wAeGJoHaJtP_fNKuwsEC_EG5j14ecF59", 
+                            label: "Image A & B", 
+                            desc: "講義原圖：電影院 vs 騎士" 
+                        }
+                    ],
+                    content: "The set of images presented offers a striking juxtaposition between enjoying a holiday and facing danger, highlighting the multifaceted nature of a typhoon day. On one end of the spectrum, Image A captures a sense of excitement and relaxation. Here, we observe crowds of people lining up at a movie theater, which suggests that many people treat the typhoon break simply as a bonus time to have fun. Conversely, Image B paints a starkly different picture, evoking an atmosphere of difficulty and risk. Unlike the former, this scene is characterized by motorcyclists struggling against strong winds and heavy rain, emphasizing how dangerous it is to be outside during the storm. The contrast between these two scenarios is not merely visual but speaks to the deeper dichotomy of personal pleasure versus public safety.\n\nReflecting upon these distinct depictions, I find myself gravitating towards the cautious attitude suggested by the reality of Image B. To me, a typhoon day represents more than just a free day off from school or work; it serves as a sanctuary for protecting our lives. While going shopping or watching a movie holds some merit for relieving stress, it pales in comparison to the essential value of staying safe indoors. For instance, I recall a moment when I ordered food delivery during a typhoon because I was lazy. When the delivery man arrived, he was soaking wet and shivering. I felt terrible because my convenience put him in danger. Ultimately, whether we are discussing government policy or personal choices, the priority should undoubtedly be placed on safety and empathy, ensuring that no one gets hurt unnecessarily.",
+                    translation: "這組圖片呈現了享受假期與面對危險之間的強烈對比，突顯了颱風天多面向的本質。在光譜的一端，圖片A捕捉到了一種興奮與放鬆的感覺。在這裡，我們觀察到電影院前排隊的人潮，這暗示著許多人僅僅將颱風假視為玩樂的額外時間。相反地，圖片B描繪了一幅截然不同的畫面，喚起了一種困難與風險的氛圍。與前者不同，這個場景的特徵是機車騎士在強風豪雨中掙扎，強調了暴風雨期間在戶外是多麼危險。這兩種情境之間的對比不僅是視覺上的，更訴說了個人享樂與公共安全之間更深層的二元對立。\n\n反思這些截然不同的描繪，我發現自己更傾向於圖片B現實所暗示的謹慎態度。對我來說，颱風天不僅僅是不用上學或上班的免費假期；它充當了保護我們生命的避風港（保護機制）。雖然去購物或看電影對緩解壓力有其優點，但與待在室內保持安全的本質價值相比，它就相形見絀了。例如，我回想起有一次颱風天我因為懶惰而叫了外送。當外送員到達時，他全身濕透且在發抖。我感到非常糟糕，因為我的便利讓他陷入危險。最終，無論我們討論的是政府政策還是個人選擇，優先考量無疑應該放在安全與同理心上，確保沒有人受到不必要的傷害。"
+                }
+            ];
+
+            // --- 核心元件 ---
+
+            const useAudioPlayer = (text) => {
+                const [state, setState] = useState('idle'); 
+                const audioRef = useRef(null);
+                const synthRef = useRef(window.speechSynthesis);
+
+                const stop = () => {
+                    if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+                    if (synthRef.current.speaking || synthRef.current.paused) { synthRef.current.cancel(); }
+                    setState('idle');
+                };
+
+                const play = async () => {
+                    stop();
+                    setState('playing');
+                    try {
+                        const encoded = encodeURIComponent(text);
+                        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encoded}`;
+                        const audio = new Audio(url);
+                        audioRef.current = audio;
+                        audio.onended = () => setState('idle');
+                        audio.onerror = () => playFallback();
+                        await audio.play();
+                    } catch (e) {
+                        playFallback();
+                    }
+                };
+
+                const playFallback = () => {
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'en-US'; u.rate = 0.9;
+                    u.onend = () => setState('idle');
+                    synthRef.current.speak(u);
+                };
+
+                const pause = () => {
+                    if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setState('paused'); }
+                    else if (synthRef.current.speaking) { synthRef.current.pause(); setState('paused'); }
+                };
+
+                const resume = () => {
+                     if (audioRef.current && audioRef.current.paused) { audioRef.current.play(); setState('playing'); }
+                    else if (synthRef.current.paused) { synthRef.current.resume(); setState('playing'); }
+                    else { play(); }
+                }
+
+                return { state, play, pause, resume, stop };
+            };
+
+            const BottomSheet = ({ data, type, onClose, isQuizMode }) => {
+                const { state, play, pause, resume, stop } = useAudioPlayer(type === 'vocab' ? `${data.word}. ${data.ex}` : '');
+                const [isRevealed, setIsRevealed] = useState(false);
+
+                useEffect(() => { setIsRevealed(false); return () => stop(); }, [data.id || data.word]);
+                const showHidden = isQuizMode && type === 'vocab' && !isRevealed;
+
+                return (
+                    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
+                        <div className="absolute inset-0 bg-black/40 animate-fade-in pointer-events-auto" onClick={onClose}></div>
+                        <div className="bg-white w-full rounded-t-2xl p-6 pb-12 shadow-[0_-5px_20px_rgba(0,0,0,0.15)] animate-slide-up pointer-events-auto relative max-h-[80vh] overflow-y-auto">
+                            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 p-2"><Icons.X /></button>
+
+                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                {type === 'vocab' ? 'Vocabulary' : 'Formula Examples'}
+                            </div>
+
+                            {type === 'footnote' && (
+                                <div className="space-y-3">
+                                    {data.map((ex, i) => (
+                                        <div key={i} className="p-3 bg-blue-50 rounded-lg text-base text-gray-800 border-l-4 border-blue-400">
+                                            {ex}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {type === 'vocab' && showHidden && (
+                                <div className="text-center py-6">
+                                    <div className="text-gray-500 mb-2">{data.pos}</div>
+                                    <div className="font-bold text-xl mb-6">{data.def}</div>
+                                    <button onClick={() => setIsRevealed(true)}
+                                        className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-transform">
+                                        <Icons.Eye /> 揭曉答案
+                                    </button>
+                                </div>
+                            )}
+
+                            {type === 'vocab' && !showHidden && (
+                                <div>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <h3 className="text-3xl font-bold text-gray-900 leading-none">{data.word}</h3>
+                                        <span className="font-mono text-gray-500">{data.kk}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="text-xs font-bold bg-gray-100 px-2 py-1 rounded text-gray-600">{data.pos}</span>
+                                        <span className="text-lg text-gray-800 font-medium">{data.def}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-6 bg-gray-50 p-2 pr-4 rounded-full w-max border border-gray-100">
+                                        <button onClick={state === 'playing' ? pause : (state === 'paused' ? resume : play)} 
+                                            className="w-10 h-10 flex items-center justify-center bg-white shadow rounded-full text-blue-600 active:bg-gray-50">
+                                            {state === 'playing' ? <Icons.Pause /> : <Icons.Play />}
+                                        </button>
+                                        <button onClick={stop} className="p-2 text-gray-400 hover:text-red-500"><Icons.Square /></button>
+                                        <div className="h-4 w-[1px] bg-gray-300 mx-1"></div>
+                                        <span className="text-xs font-medium text-blue-900">
+                                            {state === 'playing' ? 'Playing...' : 'Listen'}
+                                        </span>
+                                    </div>
+                                    <div className="text-base text-gray-600 italic border-l-2 border-gray-300 pl-3 leading-relaxed">
+                                        "{data.ex}"
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            const TextParser = ({ text, onActivate, activeId, isQuizMode }) => {
+                const parts = text.split(/(\[\d+\]|[\u4e00-\u9fa5]+[a-zA-Z0-9\(\)\/]*|[\s\.,;!?()]+)/g).filter(Boolean);
+
+                return (
+                    <p className="leading-relaxed text-[17px] text-gray-800 font-normal tracking-wide">
+                        {parts.map((part, index) => {
+                            // Footnote
+                            if (/^\[\d+\]$/.test(part)) {
+                                const id = parseInt(part.replace(/[\[\]]/g, ''));
+                                return (
+                                    <button key={index} 
+                                        onClick={(e) => { e.stopPropagation(); onActivate('footnote', id); }}
+                                        className="inline-flex items-center justify-center min-w-[18px] h-[18px] ml-1 align-top text-[10px] font-bold bg-[#EB5757]/10 text-[#EB5757] rounded active:bg-[#EB5757] active:text-white transition-colors">
+                                        {id}
+                                    </button>
+                                );
+                            }
+                            // Chinese Placeholder
+                            if (/[\u4e00-\u9fa5]/.test(part)) {
+                                return <span key={index} className="text-gray-400 mx-1 border-b border-dashed border-gray-300">{part}</span>;
+                            }
+                            // Vocab Check
+                            const lower = part.toLowerCase();
+                            if (VOCAB_DB[lower]) {
+                                const isActive = activeId === `vocab-${lower}`;
+                                if (isQuizMode) {
+                                    return (
+                                        <span key={index} onClick={(e) => { e.stopPropagation(); onActivate('vocab', lower); }}
+                                            className="border-b-2 border-[#EB5757] bg-[#EB5757]/5 px-1 mx-0.5 text-transparent active:bg-[#EB5757]/20 transition-colors cursor-pointer">
+                                            {part}
+                                        </span>
+                                    );
+                                }
+                                return (
+                                    <span key={index} onClick={(e) => { e.stopPropagation(); onActivate('vocab', lower); }}
+                                        className={`px-1 mx-0.5 rounded transition-colors cursor-pointer ${isActive ? 'bg-blue-200 text-blue-900' : 'bg-[#E3E2E0] active:bg-blue-100'}`}>
+                                        {part}
+                                    </span>
+                                );
+                            }
+                            return <span key={index}>{part}</span>;
+                        })}
+                    </p>
+                );
+            };
+
+            const EssayCard = ({ essay, onActivate, activePopoverKey, isQuizMode }) => {
+                const [showTrans, setShowTrans] = useState(false);
+
+                // 單圖滿版 (因為使用者提供的圖是 A/B 合併)
+                const gridClass = "grid grid-cols-1 mb-6";
+
+                return (
+                    <div>
+                        <h2 className="text-xl font-bold mb-2 text-gray-900 leading-tight">
+                            {essay.title}
+                        </h2>
+                        
+                        <div className="bg-gray-100 p-3 rounded-lg mb-4 text-sm text-gray-600 leading-relaxed border-l-4 border-gray-300">
+                            {essay.prompt}
+                        </div>
+
+                        {/* 圖片區塊 */}
+                        {essay.images && (
+                            <div className={gridClass}>
+                                {essay.images.map((img, i) => (
+                                    <div key={i} className="relative group">
+                                        <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gray-200 shadow-sm border border-gray-200">
+                                            <img src={img.src} alt={img.label} className="w-full h-full object-contain bg-white" />
+                                        </div>
+                                        {/* 圖片標籤 */}
+                                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wider">
+                                            {img.label}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="mb-4">
+                            <TextParser text={essay.content} onActivate={onActivate} activeId={activePopoverKey} isQuizMode={isQuizMode} />
+                        </div>
+
+                        <button 
+                            onClick={() => setShowTrans(!showTrans)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full transition-colors mb-4">
+                            <Icons.Translate />
+                            {showTrans ? '隱藏中文翻譯' : '查看中文翻譯'}
+                            {showTrans ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
+                        </button>
+
+                        {showTrans && (
+                            <div className="bg-[#F3F4F6] p-4 rounded-xl text-[15px] leading-relaxed text-gray-700 animate-fade-in border border-gray-200">
+                                {essay.translation.split('\n\n').map((p, i) => (
+                                    <p key={i} className={i > 0 ? 'mt-4' : ''}>{p}</p>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="h-px bg-gray-100 my-8"></div>
+                    </div>
+                );
+            };
+
+            const App = () => {
+                const [activeTab, setActiveTab] = useState('formula');
+                const [activePopover, setActivePopover] = useState(null); 
+                const [isQuizMode, setIsQuizMode] = useState(false);
+
+                const handleActivate = (type, id) => setActivePopover({ type, id, key: `${type}-${id}` });
+                const closePopover = () => setActivePopover(null);
+
+                return (
+                    <div className="flex flex-col h-full bg-white relative">
+                        
+                        {/* Header */}
+                        <div className="bg-white/90 backdrop-blur border-b border-gray-200 px-4 py-3 flex justify-between items-center z-20 shrink-0 safe-top gap-3">
+                            <div className="font-bold text-base text-gray-800 truncate flex-1">
+                                萬用作文模板：雙圖對比版
+                            </div>
+                            
+                            <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-3 pr-2 py-1 cursor-pointer shrink-0" onClick={() => setIsQuizMode(!isQuizMode)}>
+                                <span className={`text-[10px] font-bold tracking-wider ${!isQuizMode ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    STUDY
+                                </span>
+                                <div className="transition-colors text-gray-400">
+                                    {isQuizMode ? <Icons.ToggleRight /> : <Icons.ToggleLeft />}
+                                </div>
+                                <span className={`text-[10px] font-bold tracking-wider ${isQuizMode ? 'text-[#EB5757]' : 'text-gray-400'}`}>
+                                    QUIZ
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 px-5 pt-6 hide-scrollbar bg-white">
+                            {activeTab === 'formula' && (
+                                <div className="animate-fade-in">
+                                    <div className="mb-8 bg-blue-50/80 p-4 rounded-xl border border-blue-100">
+                                        <div className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Instructions</div>
+                                        <div className="space-y-2 text-sm text-blue-900">
+                                            <p><span className="font-bold">Step 1:</span> 閱讀樣板 (不用背樣板)</p>
+                                            <p><span className="font-bold">Step 2:</span> 閱讀範文</p>
+                                            <div>
+                                                <span className="font-bold">Step 3:</span> <span className="underline decoration-blue-300">全文背誦</span>一篇範文
+                                                <div className="mt-1 text-xs text-blue-600 font-medium bg-blue-100/50 p-2 rounded">
+                                                    ⭐ 範文有上下文，比公式好背，背熟後自然能靈活運用。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h2 className="text-2xl font-bold mb-6 text-gray-900">萬用作文模版</h2>
+                                    {FORMULA_PARAGRAPHS.map((para, i) => (
+                                        <div key={i}>
+                                            <TextParser text={para} onActivate={handleActivate} activeId={activePopover?.key} isQuizMode={isQuizMode} />
+                                            {i < FORMULA_PARAGRAPHS.length - 1 && <div className="h-6"></div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {activeTab === 'essays' && (
+                                <div className="animate-fade-in space-y-12">
+                                    {ESSAYS_DATA.map(essay => (
+                                        <EssayCard 
+                                            key={essay.id} 
+                                            essay={essay} 
+                                            onActivate={handleActivate} 
+                                            activePopoverKey={activePopover?.key} 
+                                            isQuizMode={isQuizMode} 
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Nav */}
+                        <nav className="shrink-0 bg-white border-t border-gray-200 safe-bottom pb-safe z-30">
+                            <div className="flex justify-around items-center h-16">
+                                <button onClick={() => setActiveTab('formula')} 
+                                    className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'formula' ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    <Icons.Book />
+                                    <span className="text-[10px] font-medium">樣板</span>
+                                </button>
+                                <button onClick={() => setActiveTab('essays')} 
+                                    className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'essays' ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    <Icons.FileText />
+                                    <span className="text-[10px] font-medium">範文</span>
+                                </button>
+                            </div>
+                        </nav>
+
+                        {/* Popover */}
+                        {activePopover && (
+                            <BottomSheet 
+                                data={activePopover.type === 'vocab' 
+                                    ? { ...VOCAB_DB[activePopover.id], word: activePopover.id } 
+                                    : FOOTNOTE_DB[activePopover.id]} 
+                                type={activePopover.type} 
+                                onClose={closePopover} 
+                                isQuizMode={isQuizMode} 
+                            />
+                        )}
+                    </div>
+                );
+            };
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+        } catch (err) {
+            document.getElementById('error-display').style.display = 'block';
+            document.getElementById('error-display').innerHTML = 
+                '<h3>⚠️ React 渲染錯誤</h3>' +
+                '<p>' + err.toString() + '</p>';
+        }
+    </script>
+</body>
+</html>
