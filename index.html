@@ -22,8 +22,6 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 動畫效果設定 */
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -37,14 +35,9 @@
     <div id="root" class="h-full"></div>
 
     <script>
-        // 捕捉全局錯誤，避免畫面一片白卻不知道發生什麼事
-        window.onerror = function(message, source, lineno, colno, error) {
+        window.onerror = function(message) {
             document.getElementById('error-display').style.display = 'block';
-            document.getElementById('error-display').innerHTML = 
-                '<h3>⚠️ 程式發生錯誤</h3>' +
-                '<p>如果您是直接點兩下打開檔案 (file://)，圖片或功能可能會被瀏覽器擋住。</p>' +
-                '<p>建議使用 VS Code Live Server 或上傳到 GitHub Pages。</p>' +
-                '<p><b>錯誤訊息:</b> ' + message + '</p>';
+            document.getElementById('error-display').innerHTML = '<h3>⚠️ 錯誤</h3><p>' + message + '</p>';
         };
     </script>
 
@@ -52,7 +45,7 @@
         try {
             const { useState, useEffect, useRef } = React;
 
-            // --- 圖示元件 (SVG Icons) ---
+            // --- ICONS ---
             const Icons = {
                 Book: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
                 FileText: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
@@ -68,7 +61,7 @@
                 ChevronUp: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
             };
 
-            // --- 單字資料庫 ---
+            // --- VOCAB DB ---
             const VOCAB_DB = {
                 "juxtaposition": { kk: "[͵dʒʌkstəpəˋzɪʃən]", pos: "n.", def: "並列；對照", ex: "The juxtaposition of wealth and poverty is striking." },
                 "multifaceted": { kk: "[͵mʌltɪˋfæsɪtɪd]", pos: "adj.", def: "多面向的", ex: "This is a multifaceted problem." },
@@ -156,8 +149,8 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                     prompt: "提示: 不同的公園,可能樣貌不同,特色也不同。請以此為主題,並依據下列兩張圖片的內容(圖A:人工遊樂設施 vs 圖B:自然森林公園),寫一篇英文作文,文分兩段。第一段描述圖A和圖B中的公園各有何特色,第二段則說明你心目中理想公園的樣貌與特色,並解釋你的理由。",
                     images: [
                         { 
-                            // 修正後的 Google Drive 直連網址 (Ideal Park - 111.png)
-                            src: "https://drive.google.com/uc?export=view&id=1rcVmpy5FK4ckvBmkSHvmi0XBwrAcSf4D", 
+                            // 注意：這裡直接讀取 GitHub 同目錄下的檔案
+                            src: "./park.png", 
                             label: "圖 A & B", 
                             desc: "遊樂場 vs 森林" 
                         }
@@ -171,8 +164,8 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                     prompt: "提示: 每逢颱風逼近臺灣,各縣市政府會依氣象預報的內容而決定隔日是否停止上班上課。請針對這個議題寫一篇英文作文,文分兩段。第一段根據下方對比圖片(圖A:電影院排隊人潮 vs 圖B:風雨中騎車),描述颱風假時,實際上可能出現的兩種不同情景;第二段說明你對放颱風假的看法與經驗。",
                     images: [
                         { 
-                            // 修正後的 Google Drive 直連網址 (Typhoon Day - 114.png)
-                            src: "https://drive.google.com/uc?export=view&id=1wAeGJoHaJtP_fNKuwsEC_EG5j14ecF59", 
+                            // 注意：這裡直接讀取 GitHub 同目錄下的檔案
+                            src: "./typhoon.png", 
                             label: "圖 A & B", 
                             desc: "電影院 vs 騎士" 
                         }
