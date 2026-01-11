@@ -44,7 +44,6 @@
     <script type="text/babel">
         try {
             const { useState, useEffect, useRef } = React;
-
             // --- ICONS ---
             const Icons = {
                 Book: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
@@ -149,7 +148,6 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                     prompt: "提示: 不同的公園,可能樣貌不同,特色也不同。請以此為主題,並依據下列兩張圖片的內容(圖A:人工遊樂設施 vs 圖B:自然森林公園),寫一篇英文作文,文分兩段。第一段描述圖A和圖B中的公園各有何特色,第二段則說明你心目中理想公園的樣貌與特色,並解釋你的理由。",
                     images: [
                         { 
-                            // 注意：這裡直接讀取 GitHub 同目錄下的檔案
                             src: "./park.png", 
                             label: "圖 A & B", 
                             desc: "遊樂場 vs 森林" 
@@ -164,7 +162,6 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                     prompt: "提示: 每逢颱風逼近臺灣,各縣市政府會依氣象預報的內容而決定隔日是否停止上班上課。請針對這個議題寫一篇英文作文,文分兩段。第一段根據下方對比圖片(圖A:電影院排隊人潮 vs 圖B:風雨中騎車),描述颱風假時,實際上可能出現的兩種不同情景;第二段說明你對放颱風假的看法與經驗。",
                     images: [
                         { 
-                            // 注意：這裡直接讀取 GitHub 同目錄下的檔案
                             src: "./typhoon.png", 
                             label: "圖 A & B", 
                             desc: "電影院 vs 騎士" 
@@ -178,51 +175,103 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
             // --- 核心元件 ---
 
             const useAudioPlayer = (text) => {
-                const [state, setState] = useState('idle'); 
-                const audioRef = useRef(null);
-                const synthRef = useRef(window.speechSynthesis);
+                const [state, setState] = useState('idle');
+                const synth = window.speechSynthesis;
+                const utteranceRef = useRef(null);
+
+                const getCleanText = (rawText) => {
+                    return rawText.replace(/\[P\d+\]/g, '').replace(/\[\d+\]/g, '');
+                };
 
                 const stop = () => {
-                    if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-                    if (synthRef.current.speaking || synthRef.current.paused) { synthRef.current.cancel(); }
+                    if (synth.speaking || synth.paused) {
+                        synth.cancel();
+                    }
                     setState('idle');
                 };
 
-                const play = async () => {
+                const play = () => {
                     stop();
-                    setState('playing');
-                    try {
-                        const encoded = encodeURIComponent(text);
-                        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encoded}`;
-                        const audio = new Audio(url);
-                        audioRef.current = audio;
-                        audio.onended = () => setState('idle');
-                        audio.onerror = () => playFallback();
-                        await audio.play();
-                    } catch (e) {
-                        playFallback();
-                    }
-                };
+                    const cleanText = getCleanText(text);
+                    if (!cleanText) return;
 
-                const playFallback = () => {
-                    const u = new SpeechSynthesisUtterance(text);
-                    u.lang = 'en-US'; u.rate = 0.9;
+                    const u = new SpeechSynthesisUtterance(cleanText);
+                    u.lang = 'en-US'; 
+                    u.rate = 0.9;
+                    
+                    u.onstart = () => setState('playing');
                     u.onend = () => setState('idle');
-                    synthRef.current.speak(u);
+                    u.onerror = (e) => {
+                        console.error("Speech Error:", e);
+                        setState('idle');
+                    };
+
+                    utteranceRef.current = u;
+
+                    // --- 聲音選擇邏輯 (優化版) ---
+                    const voices = synth.getVoices();
+                    
+                    // 優先順序：Google小姐 -> Edge超自然語音 -> 一般美式英文
+                    const preferredVoice = 
+                        voices.find(v => v.name.includes("Google US English")) || 
+                        voices.find(v => v.name.includes("Natural") && v.lang.includes("en-US")) ||
+                        voices.find(v => v.lang === 'en-US');
+
+                    if (preferredVoice) {
+                        u.voice = preferredVoice;
+                        // Edge 的 Natural 聲音通常比較慢且清楚，稍微調回標準速度會更自然
+                        if (preferredVoice.name.includes("Natural")) {
+                            u.rate = 1.0; 
+                        }
+                    }
+                    // ---------------------------
+
+                    synth.speak(u);
                 };
 
                 const pause = () => {
-                    if (audioRef.current && !audioRef.current.paused) { audioRef.current.pause(); setState('paused'); }
-                    else if (synthRef.current.speaking) { synthRef.current.pause(); setState('paused'); }
+                    if (synth.speaking && !synth.paused) {
+                        synth.pause();
+                        setState('paused');
+                    }
                 };
 
                 const resume = () => {
-                     if (audioRef.current && audioRef.current.paused) { audioRef.current.play(); setState('playing'); }
-                    else if (synthRef.current.paused) { synthRef.current.resume(); setState('playing'); }
-                    else { play(); }
-                }
+                    if (synth.paused) {
+                        synth.resume();
+                        setState('playing');
+                    } else {
+                        play();
+                    }
+                };
+
+                useEffect(() => {
+                    const loadVoices = () => { window.speechSynthesis.getVoices(); };
+                    window.speechSynthesis.onvoiceschanged = loadVoices;
+                    loadVoices();
+                    return () => stop();
+                }, []);
 
                 return { state, play, pause, resume, stop };
+            };
+
+            const AudioControl = ({ text }) => {
+                const { state, play, pause, resume, stop } = useAudioPlayer(text);
+                
+                return (
+                    <div className="flex items-center gap-2 mb-3">
+                        <button onClick={state === 'playing' ? pause : (state === 'paused' ? resume : play)} 
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${state === 'playing' ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                            {state === 'playing' ? <Icons.Pause /> : <Icons.Play />}
+                            {state === 'playing' ? '暫停朗讀' : (state === 'paused' ? '繼續朗讀' : '全文朗讀')}
+                        </button>
+                        {(state === 'playing' || state === 'paused') && (
+                             <button onClick={stop} className="p-2 text-gray-400 hover:text-red-500 bg-white border border-gray-200 rounded-full">
+                                <Icons.Square />
+                             </button>
+                        )}
+                    </div>
+                )
             };
 
             const BottomSheet = ({ data, type, onClose, isQuizMode }) => {
@@ -343,7 +392,6 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
 
             const EssayCard = ({ essay, onActivate, activePopoverKey, isQuizMode }) => {
                 const [showTrans, setShowTrans] = useState(false);
-
                 // 單圖滿版 (因為使用者提供的圖是 A/B 合併)
                 const gridClass = "grid grid-cols-1 mb-6";
 
@@ -374,6 +422,8 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                             </div>
                         )}
                         
+                        <AudioControl text={essay.content} />
+
                         <div className="mb-4">
                             <TextParser text={essay.content} onActivate={onActivate} activeId={activePopoverKey} isQuizMode={isQuizMode} />
                         </div>
@@ -410,6 +460,11 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                 return (
                     <div className="flex flex-col h-full bg-white relative">
                         
+                         {/* 頂部閃爍提示 */}
+                        <div className="shrink-0 bg-green-600 text-white text-xs font-bold text-center py-1.5 z-50">
+                             <span className="animate-pulse">📢 朗讀功能已修復</span>
+                        </div>
+
                         {/* Header */}
                         <div className="bg-white/90 backdrop-blur border-b border-gray-200 px-4 py-3 flex justify-between items-center z-20 shrink-0 safe-top gap-3">
                             <div className="font-bold text-base text-gray-800 truncate flex-1">
@@ -450,6 +505,7 @@ Reflecting upon these distinct depictions, I find myself gravitating towards 某
                                     <h2 className="text-2xl font-bold mb-6 text-gray-900">萬用作文模版</h2>
                                     {FORMULA_PARAGRAPHS.map((para, i) => (
                                         <div key={i}>
+                                            <AudioControl text={para} />
                                             <TextParser text={para} onActivate={handleActivate} activeId={activePopover?.key} isQuizMode={isQuizMode} />
                                             {i < FORMULA_PARAGRAPHS.length - 1 && <div className="h-6"></div>}
                                         </div>
